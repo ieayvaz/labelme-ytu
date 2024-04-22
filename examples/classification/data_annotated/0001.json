@@ -1,12 +1,50 @@
 {
-  "version": "4.0.0",
+  "version": "5.4.1",
   "flags": {
     "__ignore__": false,
     "cat": true,
     "dog": false
   },
-  "shapes": [],
-  "imagePath": "0001.jpg",
+  "shapes": [
+    {
+      "label": "cat",
+      "points": [
+        [
+          78.0372314453125,
+          37.838623046875
+        ],
+        [
+          593.56201171875,
+          444.9075927734375
+        ]
+      ],
+      "shape_type": "rectangle",
+      "flags": {},
+      "description": null,
+      "group_id": null,
+      "mask": null,
+      "other_data": {}
+    },
+    {
+      "label": "cat",
+      "points": [
+        [
+          78.0372314453125,
+          37.838623046875
+        ],
+        [
+          593.56201171875,
+          444.9075927734375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "/mnt/c/Users/ismail/Desktop/app/labelme-ytu/examples/classification/data_annotated/0001.jpg",
   "imageData": null,
   "imageHeight": 480,
   "imageWidth": 640

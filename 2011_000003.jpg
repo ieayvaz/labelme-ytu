@@ -1,0 +1,262 @@
+{
+  "version": "5.4.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "person",
+      "points": [
+        [
+          366.52587890625,
+          83.55166625976562
+        ],
+        [
+          499.5979919433594,
+          331.6890869140625
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "person",
+      "points": [
+        [
+          189.44088745117188,
+          111.54048156738281
+        ],
+        [
+          314.0779113769531,
+          328.1498107910156
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "bowl",
+      "points": [
+        [
+          348.444091796875,
+          272.634033203125
+        ],
+        [
+          374.3828430175781,
+          291.91082763671875
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "bottle",
+      "points": [
+        [
+          370.37591552734375,
+          157.72561645507812
+        ],
+        [
+          387.2607116699219,
+          212.12667846679688
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "bowl",
+      "points": [
+        [
+          361.9026184082031,
+          310.4040222167969
+        ],
+        [
+          391.5063781738281,
+          334.8193054199219
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "bowl",
+      "points": [
+        [
+          318.21612548828125,
+          296.40167236328125
+        ],
+        [
+          364.6624450683594,
+          329.2852783203125
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "bowl",
+      "points": [
+        [
+          352.699951171875,
+          290.4776306152344
+        ],
+        [
+          391.461181640625,
+          312.9119567871094
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "spoon",
+      "points": [
+        [
+          379.2364196777344,
+          266.7690734863281
+        ],
+        [
+          410.2810363769531,
+          293.083251953125
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "cup",
+      "points": [
+        [
+          392.4897766113281,
+          281.1317443847656
+        ],
+        [
+          411.0645751953125,
+          309.79425048828125
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "bowl",
+      "points": [
+        [
+          308.4480895996094,
+          280.549560546875
+        ],
+        [
+          347.308349609375,
+          303.28460693359375
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "dining table",
+      "points": [
+        [
+          269.736083984375,
+          265.8147888183594
+        ],
+        [
+          431.8105773925781,
+          336.033203125
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "chair",
+      "points": [
+        [
+          442.83294677734375,
+          251.5175323486328
+        ],
+        [
+          478.6077575683594,
+          282.0660095214844
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "bottle",
+      "points": [
+        [
+          430.2528381347656,
+          78.84307861328125
+        ],
+        [
+          439.8590087890625,
+          96.95694732666016
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "spoon",
+      "points": [
+        [
+          268.8943786621094,
+          289.88946533203125
+        ],
+        [
+          324.35540771484375,
+          312.0415954589844
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "/mnt/c/Users/ismail/Desktop/app/labelme-ytu/examples/bbox_detection/data_annotated/2011_000003.jpg",
+  "imageData": null,
+  "imageHeight": 338,
+  "imageWidth": 500
+}

@@ -8,8 +8,6 @@ import os.path as osp
 import re
 import webbrowser
 
-from ultralytics import YOLO
-
 import imgviz
 import natsort
 from qtpy import QtCore
@@ -20,6 +18,7 @@ from qtpy.QtCore import Qt
 from labelme import PY2
 from labelme import __appname__
 from labelme.ai import MODELS
+from labelme.ai.yolo import Yolo
 from labelme.config import get_config
 from labelme.label_file import LabelFile
 from labelme.label_file import LabelFileError
@@ -29,6 +28,7 @@ from labelme.widgets import BrightnessContrastDialog
 from labelme.widgets import Canvas
 from labelme.widgets import FileDialogPreview
 from labelme.widgets import LabelDialog
+from labelme.widgets import ErrorDialog
 from labelme.widgets import LabelListWidget
 from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
@@ -491,6 +491,13 @@ class MainWindow(QtWidgets.QMainWindow):
             tip=self.tr("Show tutorial page"),
         )
 
+        objectDetectionModel = action(
+            self.tr("&Object Detection Model"),
+            self.selectObjModel,
+            icon="ai",
+            tip=self.tr("Select a model for object detection"),
+        )
+
         zoom = QtWidgets.QWidgetAction(self)
         zoomBoxLayout = QtWidgets.QVBoxLayout()
         zoomLabel = QtWidgets.QLabel("Zoom")
@@ -716,6 +723,7 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             help=self.menu(self.tr("&Help")),
+            ai=self.menu(self.tr("&AI")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
         )
@@ -766,24 +774,12 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
         )
 
-        self.menus.file.aboutToShow.connect(self.updateFileMenu)
-
-        # Custom context menu for the canvas widget:
-        utils.addActions(self.canvas.menus[0], self.actions.menu)
-        utils.addActions(
-            self.canvas.menus[1],
-            (
-                action("&Copy here", self.copyShape),
-                action("&Move here", self.moveShape),
-            ),
-        )
-
         selectAiModel = QtWidgets.QWidgetAction(self)
         selectAiModel.setDefaultWidget(QtWidgets.QWidget())
         selectAiModel.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
         #
-        selectAiModelLabel = QtWidgets.QLabel(self.tr("AI Model"))
-        selectAiModelLabel.setAlignment(QtCore.Qt.AlignCenter)
+        selectAiModelLabel = QtWidgets.QLabel(self.tr("Segmentation Model"))
+        selectAiModelLabel.setAlignment(QtCore.Qt.AlignLeft)
         selectAiModel.defaultWidget().layout().addWidget(selectAiModelLabel)
         #
         self._selectAiModelComboBox = QtWidgets.QComboBox()
@@ -807,17 +803,45 @@ class MainWindow(QtWidgets.QMainWindow):
             else None
         )
 
+        utils.addActions(
+            self.menus.ai, 
+            (
+                objectDetectionModel,
+                selectAiModel,
+            )
+        )
+        self.model_path = ""
+
+        self.menus.file.aboutToShow.connect(self.updateFileMenu)
+
+        # Custom context menu for the canvas widget:
+        utils.addActions(self.canvas.menus[0], self.actions.menu)
+        utils.addActions(
+            self.canvas.menus[1],
+            (
+                action("&Copy here", self.copyShape),
+                action("&Move here", self.moveShape),
+            ),
+        )
+
         runYolo = QtWidgets.QWidgetAction(self)
         runYolo.setDefaultWidget(QtWidgets.QWidget())
         runYolo.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
         #
-        runYoloLabel = QtWidgets.QLabel(self.tr("Run YOLO on Image"))
-        runYoloLabel.setAlignment(QtCore.Qt.AlignCenter)
-        runYolo.defaultWidget().layout().addWidget(runYoloLabel)
+        modelName = "No Model"
+        if(self.model_path):
+           modelName = Yolo.getFileName(self.model_path) 
+        self.runYoloLabel = QtWidgets.QLabel(modelName)
+        self.runYoloLabel.setAlignment(QtCore.Qt.AlignCenter)
+        runYolo.defaultWidget().layout().addWidget(self.runYoloLabel)
 
-        _runYoloButton = QtWidgets.QPushButton(self.tr("Run"))
+        _runYoloButton = QtWidgets.QPushButton(self.tr("Image Detection"))
         _runYoloButton.clicked.connect(self.runYolo)
+        _runYoloVidButton = QtWidgets.QPushButton(self.tr("Video Detection"))
+        _runYoloVidButton.clicked.connect(self.runYoloVid)
+
         runYolo.defaultWidget().layout().addWidget(_runYoloButton) 
+        runYolo.defaultWidget().layout().addWidget(_runYoloVidButton) 
 
         self.tools = self.toolbar("Tools")
         self.actions.tool = (
@@ -838,9 +862,10 @@ class MainWindow(QtWidgets.QMainWindow):
             fitWindow,
             zoom,
             None,
-            selectAiModel,
             runYolo,
         )
+        
+        self.errorDialogue = ErrorDialog()
 
         self.statusBar().showMessage(str(self.tr("%s started.")) % __appname__)
         self.statusBar().show()
@@ -912,10 +937,18 @@ class MainWindow(QtWidgets.QMainWindow):
         if actions:
             utils.addActions(menu, actions)
         return menu
-    
+
     def runYolo(self):
-        model = YOLO("yolov8n.pt")
-        results = model(self.imagePath)
+        if(self.imagePath is None or not self.imagePath.lower().endswith((".png", ".jpg", "jpeg"))):
+            self.errorDialogue.setText("No Image found!")
+            self.errorDialogue.show()
+            return
+
+        model = Yolo(self.model_path)
+
+        results = model.getResults(self.imagePath)
+        if results is None:
+            return
         for result in results:
             if len(result.boxes.xyxy) > 0:
                 point_list = result.boxes.xyxy.tolist()
@@ -939,6 +972,78 @@ class MainWindow(QtWidgets.QMainWindow):
                     i += 1
                 
                 self.loadShapes(pred_shapes,replace=False)
+    
+    def runYoloVid(self):
+        progress = QtWidgets.QProgressDialog("Tunning Model on Video", "Cancel", 0, self.fileListWidget.count(), self)
+        progress.setWindowModality(Qt.WindowModal)
+
+        for i in range(self.fileListWidget.count()):
+            progress.setValue(i)
+
+            if progress.wasCanceled():
+                break
+
+            self.runYoloJson(self.fileListWidget.item(i).text())
+    
+        progress.setValue(self.fileListWidget.count())
+
+    def runYoloJson(self,path):
+
+        def format_shape(s):
+            data = s.other_data.copy()
+            data.update(
+                dict(
+                    label=s.label.encode("utf-8") if PY2 else s.label,
+                    points=[(p.x(), p.y()) for p in s.points],
+                    group_id=s.group_id,
+                    description=s.description,
+                    shape_type=s.shape_type,
+                    flags=s.flags,
+                    mask=None if s.mask is None else utils.img_arr_to_b64(s.mask),
+                )
+            )
+            return data
+        
+        model = Yolo(self.model_path)
+
+        results = model.getResults(path)
+        if results is None:
+            return
+        for result in results:
+            if len(result.boxes.xyxy) > 0:
+                point_list = result.boxes.xyxy.tolist()
+
+                pred_shapes = []
+                i = 0
+                for shapepoints in point_list:
+                    qpoint_list = [QtCore.QPointF(shapepoints[0], shapepoints[1]), QtCore.QPointF(shapepoints[2], shapepoints[3])]
+
+                    pred_shapes.append(Shape(
+                    label=result.names[int(result.boxes.cls[i])],
+                    group_id=None,
+                    flags={},
+                    line_color=None,
+                    shape_type="rectangle",
+                    description=None,
+                    ))
+
+                    pred_shapes[-1].addPoint(qpoint_list[0])
+                    pred_shapes[-1].addPoint(qpoint_list[1])
+                    i += 1
+                
+                lf = LabelFile()
+
+                imagefile = QtGui.QImage(path)
+
+                lf.change_and_save(
+                    filename=os.path.splitext(path)[0] + ".json",
+                    shapes=[format_shape(shape) for shape in pred_shapes],
+                    imagePath=path,
+                    imageHeight=imagefile.height(),
+                    imageWidth=imagefile.width(),
+                )
+
+        return
 
     def toolbar(self, title, actions=None):
         toolbar = ToolBar(title)
@@ -1060,6 +1165,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def tutorial(self):
         url = "https://github.com/wkentaro/labelme/tree/main/examples/tutorial"  # NOQA
         webbrowser.open(url)
+
+    def selectObjModel(self):
+        model_path = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                           self.tr("Open File"),
+                                                           ".",
+                                                           self.tr("Model Files (*.pt)"))
+        self.model_path = model_path[0]
+        self.runYoloLabel.setText(Yolo.getUniqueName(model_path[0]))
+        
+
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.

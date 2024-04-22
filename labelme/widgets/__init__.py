@@ -5,6 +5,7 @@ from .brightness_contrast_dialog import BrightnessContrastDialog
 from .canvas import Canvas
 
 from .color_dialog import ColorDialog
+from .error_dialog import ErrorDialog
 
 from .file_dialog_preview import FileDialogPreview
 

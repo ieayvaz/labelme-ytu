@@ -1,57 +1,183 @@
 {
-  "version": "4.0.0",
+  "version": "5.4.1",
   "flags": {},
   "shapes": [
     {
       "label": "bus",
       "points": [
         [
-          84.0,
-          20.384615384615387
+          84.50493621826172,
+          21.631765365600586
         ],
         [
-          435.0,
-          373.38461538461536
+          433.36859130859375,
+          373.637451171875
         ]
       ],
-      "group_id": null,
       "shape_type": "rectangle",
-      "flags": {}
+      "flags": {},
+      "description": null,
+      "group_id": null,
+      "mask": null,
+      "other_data": {
+        "other_data": {}
+      }
     },
     {
       "label": "bus",
       "points": [
         [
-          1.0,
-          99.0
+          0.5393147468566895,
+          100.19912719726562
         ],
         [
-          107.0,
-          282.0
+          107.04729461669922,
+          283.7728576660156
         ]
       ],
-      "group_id": null,
       "shape_type": "rectangle",
-      "flags": {}
+      "flags": {},
+      "description": null,
+      "group_id": null,
+      "mask": null,
+      "other_data": {
+        "other_data": {}
+      }
     },
     {
       "label": "car",
       "points": [
         [
-          409.0,
-          167.0
+          408.6481018066406,
+          168.81924438476562
         ],
         [
-          500.0,
-          266.0
+          499.6053771972656,
+          255.47332763671875
+        ]
+      ],
+      "shape_type": "rectangle",
+      "flags": {},
+      "description": null,
+      "group_id": null,
+      "mask": null,
+      "other_data": {
+        "other_data": {}
+      }
+    },
+    {
+      "label": "bus",
+      "points": [
+        [
+          84.50493621826172,
+          21.631765365600586
+        ],
+        [
+          433.36859130859375,
+          373.637451171875
+        ]
+      ],
+      "shape_type": "rectangle",
+      "flags": {},
+      "description": null,
+      "group_id": null,
+      "mask": null,
+      "other_data": {}
+    },
+    {
+      "label": "bus",
+      "points": [
+        [
+          0.5393147468566895,
+          100.19912719726562
+        ],
+        [
+          107.04729461669922,
+          283.7728576660156
+        ]
+      ],
+      "shape_type": "rectangle",
+      "flags": {},
+      "description": null,
+      "group_id": null,
+      "mask": null,
+      "other_data": {}
+    },
+    {
+      "label": "car",
+      "points": [
+        [
+          408.6481018066406,
+          168.81924438476562
+        ],
+        [
+          499.6053771972656,
+          255.47332763671875
+        ]
+      ],
+      "shape_type": "rectangle",
+      "flags": {},
+      "description": null,
+      "group_id": null,
+      "mask": null,
+      "other_data": {}
+    },
+    {
+      "label": "bus",
+      "points": [
+        [
+          84.50493621826172,
+          21.631765365600586
+        ],
+        [
+          433.36859130859375,
+          373.637451171875
         ]
       ],
       "group_id": null,
+      "description": null,
       "shape_type": "rectangle",
-      "flags": {}
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "bus",
+      "points": [
+        [
+          0.5393147468566895,
+          100.19912719726562
+        ],
+        [
+          107.04729461669922,
+          283.7728576660156
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "car",
+      "points": [
+        [
+          408.6481018066406,
+          168.81924438476562
+        ],
+        [
+          499.6053771972656,
+          255.47332763671875
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
     }
   ],
-  "imagePath": "2011_000025.jpg",
+  "imagePath": "/mnt/c/Users/ismail/Desktop/app/labelme-ytu/examples/bbox_detection/data_annotated/2011_000025.jpg",
   "imageData": null,
   "imageHeight": 375,
   "imageWidth": 500

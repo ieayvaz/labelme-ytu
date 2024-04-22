@@ -149,6 +149,50 @@ class LabelFile(object):
             imageWidth = img_arr.shape[1]
         return imageHeight, imageWidth
 
+    def change_and_save(
+        self,
+        filename,
+        shapes,
+        imagePath,
+        imageHeight,
+        imageWidth,
+        imageData=None,
+        otherData=None,
+        flags=None,
+    ):
+        self.load(filename)
+
+        if imageData is not None:
+            imageData = base64.b64encode(imageData).decode("utf-8")
+            imageHeight, imageWidth = self._check_image_height_and_width(
+                imageData, imageHeight, imageWidth
+            )
+        if otherData is None:
+            otherData = {}
+        if flags is None:
+            flags = {}
+
+        self.flags.update(flags)
+
+        data = dict(
+            version=__version__,
+            flags=self.flags,
+            shapes=self.shapes + shapes,
+            imagePath=imagePath,
+            imageData=imageData,
+            imageHeight=imageHeight,
+            imageWidth=imageWidth,
+        )
+        for key, value in otherData.items():
+            assert key not in data
+            data[key] = value
+        try:
+            with open(filename, "w") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            self.filename = filename
+        except Exception as e:
+            raise LabelFileError(e)
+
     def save(
         self,
         filename,
