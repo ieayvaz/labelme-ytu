@@ -118,9 +118,7 @@ class LabelFile(object):
                 for s in data["shapes"]
             ]
         except Exception as e:
-            self.shapes = []
-            self.imagePath = None
-            self.imageData = None
+            raise LabelFileError()
 
         otherData = {}
         for key, value in data.items():
