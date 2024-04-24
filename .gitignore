@@ -1,11 +1,10 @@
-/.cache/
-/.pytest_cache/
 
-/build/
-/dist/
-/*.egg-info/
-
-*.py[cdo]
-
-.DS_Store
-.idea/
+/dist
+/labelme/__pycache__
+/labelme.egg-info
+/labelme/ai/__pycache__
+/labelme/config/__pycache__
+/labelme/widgets/__pycache__
+/labelme_ytu.egg-info
+/labelme/utils/__pycache__
+/build
