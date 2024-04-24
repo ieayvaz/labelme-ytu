@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 from labelme.widgets import ErrorDialog
 
 import sys 
-from contextlib import redirect_stdout
 
 #ultralytics gives error if stdout is None
 if(sys.stdout is None):
