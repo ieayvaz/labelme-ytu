@@ -852,7 +852,7 @@ class MainWindow(QtWidgets.QMainWindow):
             save,
             deleteFile,
             None,
-            createMode,
+            createRectangleMode,
             editMode,
             duplicate,
             delete,
