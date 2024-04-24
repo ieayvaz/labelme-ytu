@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=Labelme
+Name=Labelme YTU
 Comment=Image Polygonal Annotation with Python
-Exec=labelme
+Exec=labelme-ytu
 Icon=labelme
 Terminal=false
 Type=Application

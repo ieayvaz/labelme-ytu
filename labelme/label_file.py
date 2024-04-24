@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 import os.path as osp
+import os
 
 import PIL.Image
 
@@ -117,7 +118,9 @@ class LabelFile(object):
                 for s in data["shapes"]
             ]
         except Exception as e:
-            raise LabelFileError(e)
+            self.shapes = []
+            self.imagePath = None
+            self.imageData = None
 
         otherData = {}
         for key, value in data.items():
@@ -160,7 +163,11 @@ class LabelFile(object):
         otherData=None,
         flags=None,
     ):
-        self.load(filename)
+        if(not os.path.exists(filename)):
+            with open(filename, 'w'):
+                pass
+        else:  
+            self.load(filename)
 
         if imageData is not None:
             imageData = base64.b64encode(imageData).decode("utf-8")
@@ -172,11 +179,9 @@ class LabelFile(object):
         if flags is None:
             flags = {}
 
-        self.flags.update(flags)
-
         data = dict(
             version=__version__,
-            flags=self.flags,
+            flags=flags,
             shapes=self.shapes + shapes,
             imagePath=imagePath,
             imageData=imageData,

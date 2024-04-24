@@ -974,7 +974,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.loadShapes(pred_shapes,replace=False)
     
     def runYoloVid(self):
-        progress = QtWidgets.QProgressDialog("Tunning Model on Video", "Cancel", 0, self.fileListWidget.count(), self)
+        progress = QtWidgets.QProgressDialog("Running Model on Video", "Cancel", 0, self.fileListWidget.count(), self)
         progress.setWindowModality(Qt.WindowModal)
 
         for i in range(self.fileListWidget.count()):
@@ -1034,9 +1034,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 lf = LabelFile()
 
                 imagefile = QtGui.QImage(path)
-
+                jsonfile = os.path.splitext(path)[0] + ".json"
+                
                 lf.change_and_save(
-                    filename=os.path.splitext(path)[0] + ".json",
+                    filename=jsonfile,
                     shapes=[format_shape(shape) for shape in pred_shapes],
                     imagePath=path,
                     imageHeight=imagefile.height(),

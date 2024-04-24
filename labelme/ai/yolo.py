@@ -4,6 +4,14 @@ from urllib.parse import urlparse
 
 from labelme.widgets import ErrorDialog
 
+import sys 
+from contextlib import redirect_stdout
+
+#ultralytics gives error if stdout is None
+if(sys.stdout is None):
+    f = open(os.devnull, 'w')
+    sys.stdout = f
+
 from ultralytics import YOLO
 
 class Yolo:
@@ -31,7 +39,7 @@ class Yolo:
             msgBox = ErrorDialog("Could not run the model.\nCheck model path in AI -> Object Detection Model.")
             msgBox.show()
             return None
-
+        
         model = YOLO(self.model_path)
         return model(image_paths)
 

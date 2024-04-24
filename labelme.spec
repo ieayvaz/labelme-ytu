@@ -9,12 +9,13 @@ sys.setrecursionlimit(5000)  # required on Windows
 
 a = Analysis(
     ['labelme/__main__.py'],
-    pathex=['labelme'],
+    pathex=['labelme-ytu'],
     binaries=[],
     datas=[
         ('labelme/config/default_config.yaml', 'labelme/config'),
         ('labelme/icons/*', 'labelme/icons'),
         ('labelme/translate/*.qm', 'translate'),
+        ('ultralytics/default.yaml', 'ultralytics/cfg')
     ],
     hiddenimports=[],
     hookspath=[],
@@ -28,7 +29,7 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
-    name='labelme',
+    name='labelme-ytu',
     debug=False,
     strip=False,
     upx=True,
@@ -38,8 +39,19 @@ exe = EXE(
 )
 app = BUNDLE(
     exe,
-    name='Labelme.app',
+    name='Labelme-YTU.app',
     icon='labelme/icons/icon.icns',
     bundle_identifier=None,
     info_plist={'NSHighResolutionCapable': 'True'},
+)
+
+coll = COLLECT(    
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='Labelme-YTU',
 )
