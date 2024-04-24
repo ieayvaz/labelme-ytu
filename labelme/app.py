@@ -939,7 +939,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return menu
 
     def runYolo(self):
-        if(self.imagePath is None or not self.imagePath.lower().endswith((".png", ".jpg", "jpeg"))):
+        if(self.imagePath is None or not self.imagePath.lower().endswith(tuple([
+                ".{}".format(fmt.data().decode())
+                for fmt in QtGui.QImageReader.supportedImageFormats()
+            ]))):
             self.errorDialogue.setText("No Image found!")
             self.errorDialogue.show()
             return
