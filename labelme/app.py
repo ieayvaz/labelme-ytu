@@ -977,6 +977,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.loadShapes(pred_shapes,replace=False)
     
     def runYoloVid(self):
+        if(self.fileListWidget.count() <= 0):
+            self.errorDialogue.setText(self.tr("No frame found!"))
+            self.errorDialogue.show()
+            return
+        
         progress = QtWidgets.QProgressDialog("Running Model on Video", "Cancel", 0, self.fileListWidget.count(), self)
         progress.setWindowModality(Qt.WindowModal)
 

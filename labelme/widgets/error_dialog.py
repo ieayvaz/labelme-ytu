@@ -5,5 +5,8 @@ class ErrorDialog(QtWidgets.QMessageBox):
         super(ErrorDialog, self).__init__(parent)
         self.setText(msg)
 
+    def setText(self,msg):
+        super().setText(msg)
+
     def show(self):
         self.exec()
