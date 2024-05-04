@@ -8,6 +8,7 @@ from .color_dialog import ColorDialog
 from .error_dialog import ErrorDialog
 
 from .file_dialog_preview import FileDialogPreview
+from .directory_selector import DirectorySelector
 
 from .label_dialog import LabelDialog
 from .label_dialog import LabelQLineEdit

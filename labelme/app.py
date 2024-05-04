@@ -8,6 +8,7 @@ import os.path as osp
 import re
 import webbrowser
 
+import cv2
 import imgviz
 import natsort
 from qtpy import QtCore
@@ -29,6 +30,7 @@ from labelme.widgets import Canvas
 from labelme.widgets import FileDialogPreview
 from labelme.widgets import LabelDialog
 from labelme.widgets import ErrorDialog
+from labelme.widgets import DirectorySelector
 from labelme.widgets import LabelListWidget
 from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
@@ -227,6 +229,12 @@ class MainWindow(QtWidgets.QMainWindow):
             shortcuts["open_dir"],
             "open",
             self.tr("Open Dir"),
+        )
+        extractFrames = action(
+            self.tr("Extract Frames"),
+            self.extractFramesDialog,
+            "open",
+            self.tr("Extract frames of a video to a directory"),
         )
         openNextImg = action(
             self.tr("&Next Image"),
@@ -663,7 +671,7 @@ class MainWindow(QtWidgets.QMainWindow):
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
-            fileMenuActions=(open_, opendir, save, saveAs, close, quit),
+            fileMenuActions=(open_, opendir, extractFrames, save, saveAs, close, quit),
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -735,6 +743,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 openNextImg,
                 openPrevImg,
                 opendir,
+                extractFrames,
                 self.menus.recentFiles,
                 save,
                 saveAs,
@@ -2189,6 +2198,98 @@ class MainWindow(QtWidgets.QMainWindow):
             )
         )
         self.importDirImages(targetDirPath)
+
+    @QtCore.Slot()
+    def extractVideo(self, videopath, dirpath, framerate):
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath)
+
+        cap = cv2.VideoCapture(videopath)
+        if not cap.isOpened():
+            print("Error: Could not open video file.")
+            return
+
+        fps = cap.get(cv2.CAP_PROP_FPS)
+
+        # Calculate frame interval based on desired framerate
+        frame_interval = int(round(fps / framerate))
+
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        frame_count = 0
+        frame_num = 0
+
+        progress = QtWidgets.QProgressDialog("Extracting Video", "Cancel", 0, (int)(total_frames/frame_interval),self)
+        progress.setWindowModality(Qt.WindowModal)
+
+        # Read and save frames
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            if progress.wasCanceled():
+                break
+
+            # Save frame if it's within the desired frame interval
+            if frame_num % frame_interval == 0:
+                frame_filename = os.path.join(dirpath, f"frame_{frame_count}.jpg")
+                cv2.imwrite(frame_filename, frame)
+                frame_count += 1
+                progress.setValue(frame_count)
+
+            frame_num += 1
+
+        progress.setValue(total_frames/frame_interval)
+        cap.release()
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setText("Frames saved succesfully to %s" % dirpath)
+        msgbox.exec()
+
+    def extractFramesDialog(self):
+        if not self.mayContinue():
+            return
+        path = osp.dirname(str(self.filename)) if self.filename else "."
+        formats = [
+            "*.mp4",
+            "*.mkv",
+            "*.avi",
+        ]
+        filters = self.tr("Video files (%s)") % " ".join(
+            formats
+        )
+        fileDialog = FileDialogPreview(self)
+        fileDialog.setFileMode(FileDialogPreview.ExistingFile)
+        fileDialog.setNameFilter(filters)
+        fileDialog.setWindowTitle(
+            self.tr("%s - Choose Video Files") % __appname__,
+        )
+        fileDialog.setWindowFilePath(path)
+        fileDialog.setViewMode(FileDialogPreview.Detail)
+        if fileDialog.exec_():
+            fileName = fileDialog.selectedFiles()[0]
+            if fileName:
+                videoDialog = QtWidgets.QDialog(self)
+                videoDialog.setModal(True)
+                layout = QtWidgets.QVBoxLayout(videoDialog)
+                dirpathlabel = QtWidgets.QLabel("Select output directory: ")
+                dirsel = DirectorySelector()
+                dirsel.setPath(fileName.split(".")[0])
+                frratelayout = QtWidgets.QHBoxLayout()
+                frameratelabel = QtWidgets.QLabel(self.tr("Select FPS : "))
+                frameratepicker = QtWidgets.QSpinBox()
+                frameratepicker.setRange(1,100)
+                frameratepicker.setSingleStep(1)
+                frameratepicker.setValue(5)
+                frratelayout.addWidget(frameratelabel)
+                frratelayout.addWidget(frameratepicker)
+                layout.addWidget(dirpathlabel)
+                layout.addWidget(dirsel)
+                layout.addLayout(frratelayout)
+                extbutton = QtWidgets.QPushButton("Extract")
+                extbutton.clicked.connect(lambda: self.extractVideo(fileName,dirsel.getPath(),frameratepicker.value()))
+                extbutton.clicked.connect(videoDialog.close)
+                layout.addWidget(extbutton, alignment = Qt.AlignRight)
+                videoDialog.exec()
 
     @property
     def imageList(self):
