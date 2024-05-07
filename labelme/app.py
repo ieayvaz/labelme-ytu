@@ -1602,7 +1602,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
-            self.actions.deleteAll.setEnabled(True)
             self.setDirty()
         else:
             self.canvas.undoLastLine()
