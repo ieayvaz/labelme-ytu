@@ -1319,13 +1319,13 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
     def fileSelectionChanged(self):
+        if self.filename and not self.image.isNull():
+            self.saveFile()
+
         items = self.fileListWidget.selectedItems()
         if not items:
             return
         item = items[0]
-
-        if not self.mayContinue():
-            return
 
         currIndex = self.imageList.index(str(item.text()))
         if currIndex < len(self.imageList):
@@ -1903,11 +1903,11 @@ class MainWindow(QtWidgets.QMainWindow):
         ):
             self._config["keep_prev"] = True
 
-        if not self.mayContinue():
-            return
-
         if len(self.imageList) <= 0:
             return
+
+        if self.filename:
+            self._saveFile(self.filename.split(".")[0] + ".json")
 
         if self.filename is None:
             return
@@ -1927,11 +1927,11 @@ class MainWindow(QtWidgets.QMainWindow):
         ):
             self._config["keep_prev"] = True
 
-        if not self.mayContinue():
-            return
-
         if len(self.imageList) <= 0:
             return
+
+        if self.filename:
+            self._saveFile(self.filename.split(".")[0] + ".json")
 
         filename = None
         if self.filename is None:
@@ -1950,8 +1950,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-        if not self.mayContinue():
-            return
         path = osp.dirname(str(self.filename)) if self.filename else "."
         formats = [
             "*.{}".format(fmt.data().decode())
@@ -2246,8 +2244,6 @@ class MainWindow(QtWidgets.QMainWindow):
         msgbox.exec()
 
     def extractFramesDialog(self):
-        if not self.mayContinue():
-            return
         path = osp.dirname(str(self.filename)) if self.filename else "."
         formats = [
             "*.mp4",
