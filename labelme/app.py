@@ -241,7 +241,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openNextImg,
             shortcuts["open_next"],
             "next",
-            self.tr("Open next (hold Ctl+Shift to copy labels)"),
+            self.tr("Open next (hold Shift to copy labels)"),
             enabled=False,
         )
         openPrevImg = action(
@@ -249,7 +249,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openPrevImg,
             shortcuts["open_prev"],
             "prev",
-            self.tr("Open prev (hold Ctl+Shift to copy labels)"),
+            self.tr("Open prev (hold Shift to copy labels)"),
             enabled=False,
         )
         save = action(
@@ -416,6 +416,14 @@ class MainWindow(QtWidgets.QMainWindow):
             "cancel",
             self.tr("Delete the selected polygons"),
             enabled=False,
+        )
+        deleteAll = action(
+            self.tr("Delete All Polygons"),
+            self.deleteAllShapes,
+            shortcuts["delete_all"],
+            "delete",
+            self.tr("Delete all polygons in image"),
+            enabled=False
         )
         duplicate = action(
             self.tr("Duplicate Polygons"),
@@ -644,6 +652,7 @@ class MainWindow(QtWidgets.QMainWindow):
             deleteFile=deleteFile,
             toggleKeepPrevMode=toggle_keep_prev_mode,
             delete=delete,
+            deleteAll=deleteAll,
             edit=edit,
             duplicate=duplicate,
             copy=copy,
@@ -680,6 +689,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 copy,
                 paste,
                 delete,
+                deleteAll,
                 None,
                 undo,
                 undoLastPoint,
@@ -721,7 +731,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 brightnessContrast,
             ),
-            onShapesPresent=(saveAs, hideAll, showAll, toggleAll),
+            onShapesPresent=(saveAs, hideAll, showAll, toggleAll, deleteAll),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -865,6 +875,7 @@ class MainWindow(QtWidgets.QMainWindow):
             editMode,
             duplicate,
             delete,
+            deleteAll,
             undo,
             brightnessContrast,
             None,
@@ -1181,7 +1192,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
     def tutorial(self):
-        url = "https://github.com/wkentaro/labelme/tree/main/examples/tutorial"  # NOQA
+   
         webbrowser.open(url)
 
     def selectObjModel(self):
@@ -1191,7 +1202,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                                            self.tr("Model Files (*.pt)"))
         self.model_path = model_path[0]
         self.runYoloLabel.setText(Yolo.getUniqueName(model_path[0]))
-        
+
 
 
     def toggleDrawingSensitive(self, drawing=True):
@@ -1591,6 +1602,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
+            self.actions.deleteAll.setEnabled(True)
             self.setDirty()
         else:
             self.canvas.undoLastLine()
@@ -1899,14 +1911,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def openPrevImg(self, _value=False):
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
-            Qt.ControlModifier | Qt.ShiftModifier
+            Qt.ShiftModifier
         ):
             self._config["keep_prev"] = True
 
         if len(self.imageList) <= 0:
             return
 
-        if self.filename:
+        if self.filename and self.dirty:
             self._saveFile(self.filename.split(".")[0] + ".json")
 
         if self.filename is None:
@@ -1923,14 +1935,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
-            Qt.ControlModifier | Qt.ShiftModifier
+            Qt.ShiftModifier
         ):
             self._config["keep_prev"] = True
 
         if len(self.imageList) <= 0:
             return
 
-        if self.filename:
+        if self.filename and self.dirty :
             self._saveFile(self.filename.split(".")[0] + ".json")
 
         filename = None
@@ -2160,6 +2172,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self, self.tr("Attention"), msg, yes | no, yes
         ):
             self.remLabels(self.canvas.deleteSelected())
+            self.setDirty()
+            if self.noShapes():
+                for action in self.actions.onShapesPresent:
+                    action.setEnabled(False)
+
+    def deleteAllShapes(self):
+        yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+        msg = self.tr(
+            "You are about to permanently delete polygons, " "proceed anyway?"
+        )
+        if yes == QtWidgets.QMessageBox.warning(
+            self, self.tr("Attention"), msg, yes | no, yes
+        ):
+            self.remLabels(self.canvas.deleteAllShapes())
             self.setDirty()
             if self.noShapes():
                 for action in self.actions.onShapesPresent:
