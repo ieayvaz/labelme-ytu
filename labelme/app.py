@@ -993,15 +993,20 @@ class MainWindow(QtWidgets.QMainWindow):
                     pred_shapes[-1].addPoint(qpoint_list[0])
                     pred_shapes[-1].addPoint(qpoint_list[1])
                     i += 1
-                
+
                 self.loadShapes(pred_shapes,replace=False)
-    
+
     def runYoloVid(self):
+        if not (self.model_path and self.model_path.split(".")[-1] == "pt"):
+            self.errorDialogue.setText(self.tr("Model cannot found!"))
+            self.errorDialogue.show()
+            return
+
         if(self.fileListWidget.count() <= 0):
             self.errorDialogue.setText(self.tr("No frame found!"))
             self.errorDialogue.show()
             return
-        
+
         progress = QtWidgets.QProgressDialog("Running Model on Video", "Cancel", 0, self.fileListWidget.count(), self)
         progress.setWindowModality(Qt.WindowModal)
 
@@ -1012,8 +1017,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 break
 
             self.runYoloJson(self.fileListWidget.item(i).text())
-    
+
         progress.setValue(self.fileListWidget.count())
+        self.loadFile(self.filename)
 
     def runYoloJson(self,path):
 
@@ -1031,7 +1037,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
             )
             return data
-        
+
         model = Yolo(self.model_path)
 
         results = model.getResults(path)
@@ -1058,12 +1064,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     pred_shapes[-1].addPoint(qpoint_list[0])
                     pred_shapes[-1].addPoint(qpoint_list[1])
                     i += 1
-                
+
                 lf = LabelFile()
 
                 imagefile = QtGui.QImage(path)
                 jsonfile = os.path.splitext(path)[0] + ".json"
-                
+
                 lf.change_and_save(
                     filename=jsonfile,
                     shapes=[format_shape(shape) for shape in pred_shapes],
