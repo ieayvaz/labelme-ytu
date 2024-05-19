@@ -4,14 +4,12 @@ from urllib.parse import urlparse
 
 from labelme.widgets import ErrorDialog
 
-import sys 
+import sys
 
 #ultralytics gives error if stdout is None
-if(sys.stdout is None):
+if sys.stdout is None:
     f = open(os.devnull, 'w')
     sys.stdout = f
-
-from ultralytics import YOLO
 
 class Yolo:
     model_path = ""
@@ -33,14 +31,23 @@ class Yolo:
         self.model_path = path
 
     def getResults(self, image_paths):
-        
-        if(not self.model_path.lower().endswith(".pt")):
+        if not self.model_path.lower().endswith(".pt"):
             msgBox = ErrorDialog("Could not run the model.\nCheck model path in AI -> Object Detection Model.")
             msgBox.show()
             return None
         
-        model = YOLO(self.model_path)
-        return model(image_paths)
+        # Lazy load YOLO only when this method is called
+        try:
+            import importlib
+            ultralytics = importlib.import_module('ultralytics')
+            YOLO = getattr(ultralytics, 'YOLO')
+            model = YOLO(self.model_path)
+            return model(image_paths)
+        except (ImportError, AttributeError) as e:
+            msgBox = ErrorDialog(f"Error loading YOLO model: {e}")
+            msgBox.show()
+            return None
+
 
 
 
