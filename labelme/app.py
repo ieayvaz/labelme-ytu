@@ -176,6 +176,7 @@ class MainWindow(QtWidgets.QMainWindow):
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidget(self.canvas)
         scrollArea.setWidgetResizable(True)
+        scrollArea.setStyleSheet("background-image: url(./labelme/icons/yildiz.png);background-repeat: no-repeat; background-position: center;")
         self.scrollBars = {
             Qt.Vertical: scrollArea.verticalScrollBar(),
             Qt.Horizontal: scrollArea.horizontalScrollBar(),
