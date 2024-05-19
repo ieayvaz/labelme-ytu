@@ -17,7 +17,7 @@ a = Analysis(
         ('labelme/translate/*.qm', 'translate'),
         ('labelme/ultralytics/default.yaml', 'ultralytics/cfg')
     ],
-    hiddenimports=[],
+    hiddenimports=['ultralytics'],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],
