@@ -241,7 +241,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openNextImg,
             shortcuts["open_next"],
             "next",
-            self.tr("Open next (hold Ctl+Shift to copy labels)"),
+            self.tr("Open next (hold Shift to copy labels)"),
             enabled=False,
         )
         openPrevImg = action(
@@ -249,7 +249,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openPrevImg,
             shortcuts["open_prev"],
             "prev",
-            self.tr("Open prev (hold Ctl+Shift to copy labels)"),
+            self.tr("Open prev (hold Shift to copy labels)"),
             enabled=False,
         )
         save = action(
@@ -416,6 +416,14 @@ class MainWindow(QtWidgets.QMainWindow):
             "cancel",
             self.tr("Delete the selected polygons"),
             enabled=False,
+        )
+        deleteAll = action(
+            self.tr("Delete All Polygons"),
+            self.deleteAllShapes,
+            shortcuts["delete_all"],
+            "delete",
+            self.tr("Delete all polygons in image"),
+            enabled=False
         )
         duplicate = action(
             self.tr("Duplicate Polygons"),
@@ -644,6 +652,7 @@ class MainWindow(QtWidgets.QMainWindow):
             deleteFile=deleteFile,
             toggleKeepPrevMode=toggle_keep_prev_mode,
             delete=delete,
+            deleteAll=deleteAll,
             edit=edit,
             duplicate=duplicate,
             copy=copy,
@@ -680,6 +689,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 copy,
                 paste,
                 delete,
+                deleteAll,
                 None,
                 undo,
                 undoLastPoint,
@@ -721,7 +731,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 brightnessContrast,
             ),
-            onShapesPresent=(saveAs, hideAll, showAll, toggleAll),
+            onShapesPresent=(saveAs, hideAll, showAll, toggleAll, deleteAll),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -865,6 +875,7 @@ class MainWindow(QtWidgets.QMainWindow):
             editMode,
             duplicate,
             delete,
+            deleteAll,
             undo,
             brightnessContrast,
             None,
@@ -982,15 +993,20 @@ class MainWindow(QtWidgets.QMainWindow):
                     pred_shapes[-1].addPoint(qpoint_list[0])
                     pred_shapes[-1].addPoint(qpoint_list[1])
                     i += 1
-                
+
                 self.loadShapes(pred_shapes,replace=False)
-    
+
     def runYoloVid(self):
+        if not (self.model_path and self.model_path.split(".")[-1] == "pt"):
+            self.errorDialogue.setText(self.tr("Model cannot found!"))
+            self.errorDialogue.show()
+            return
+
         if(self.fileListWidget.count() <= 0):
             self.errorDialogue.setText(self.tr("No frame found!"))
             self.errorDialogue.show()
             return
-        
+
         progress = QtWidgets.QProgressDialog("Running Model on Video", "Cancel", 0, self.fileListWidget.count(), self)
         progress.setWindowModality(Qt.WindowModal)
 
@@ -1001,8 +1017,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 break
 
             self.runYoloJson(self.fileListWidget.item(i).text())
-    
+
         progress.setValue(self.fileListWidget.count())
+        self.loadFile(self.filename)
 
     def runYoloJson(self,path):
 
@@ -1020,7 +1037,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
             )
             return data
-        
+
         model = Yolo(self.model_path)
 
         results = model.getResults(path)
@@ -1047,12 +1064,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     pred_shapes[-1].addPoint(qpoint_list[0])
                     pred_shapes[-1].addPoint(qpoint_list[1])
                     i += 1
-                
+
                 lf = LabelFile()
 
                 imagefile = QtGui.QImage(path)
                 jsonfile = os.path.splitext(path)[0] + ".json"
-                
+
                 lf.change_and_save(
                     filename=jsonfile,
                     shapes=[format_shape(shape) for shape in pred_shapes],
@@ -1181,7 +1198,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
     def tutorial(self):
-        url = "https://github.com/wkentaro/labelme/tree/main/examples/tutorial"  # NOQA
+   
         webbrowser.open(url)
 
     def selectObjModel(self):
@@ -1191,7 +1208,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                                            self.tr("Model Files (*.pt)"))
         self.model_path = model_path[0]
         self.runYoloLabel.setText(Yolo.getUniqueName(model_path[0]))
-        
+
 
 
     def toggleDrawingSensitive(self, drawing=True):
@@ -1319,13 +1336,13 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
     def fileSelectionChanged(self):
+        if self.filename and not self.image.isNull():
+            self.saveFile()
+
         items = self.fileListWidget.selectedItems()
         if not items:
             return
         item = items[0]
-
-        if not self.mayContinue():
-            return
 
         currIndex = self.imageList.index(str(item.text()))
         if currIndex < len(self.imageList):
@@ -1899,15 +1916,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def openPrevImg(self, _value=False):
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
-            Qt.ControlModifier | Qt.ShiftModifier
+            Qt.ShiftModifier
         ):
             self._config["keep_prev"] = True
 
-        if not self.mayContinue():
-            return
-
         if len(self.imageList) <= 0:
             return
+
+        if self.filename and self.dirty:
+            self._saveFile(self.filename.split(".")[0] + ".json")
 
         if self.filename is None:
             return
@@ -1923,15 +1940,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
-            Qt.ControlModifier | Qt.ShiftModifier
+            Qt.ShiftModifier
         ):
             self._config["keep_prev"] = True
 
-        if not self.mayContinue():
-            return
-
         if len(self.imageList) <= 0:
             return
+
+        if self.filename and self.dirty :
+            self._saveFile(self.filename.split(".")[0] + ".json")
 
         filename = None
         if self.filename is None:
@@ -1950,8 +1967,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-        if not self.mayContinue():
-            return
         path = osp.dirname(str(self.filename)) if self.filename else "."
         formats = [
             "*.{}".format(fmt.data().decode())
@@ -2167,6 +2182,20 @@ class MainWindow(QtWidgets.QMainWindow):
                 for action in self.actions.onShapesPresent:
                     action.setEnabled(False)
 
+    def deleteAllShapes(self):
+        yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+        msg = self.tr(
+            "You are about to permanently delete polygons, " "proceed anyway?"
+        )
+        if yes == QtWidgets.QMessageBox.warning(
+            self, self.tr("Attention"), msg, yes | no, yes
+        ):
+            self.remLabels(self.canvas.deleteAllShapes())
+            self.setDirty()
+            if self.noShapes():
+                for action in self.actions.onShapesPresent:
+                    action.setEnabled(False)
+
     def copyShape(self):
         self.canvas.endMove(copy=True)
         for shape in self.canvas.selectedShapes:
@@ -2246,8 +2275,6 @@ class MainWindow(QtWidgets.QMainWindow):
         msgbox.exec()
 
     def extractFramesDialog(self):
-        if not self.mayContinue():
-            return
         path = osp.dirname(str(self.filename)) if self.filename else "."
         formats = [
             "*.mp4",

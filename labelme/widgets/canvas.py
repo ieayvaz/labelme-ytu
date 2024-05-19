@@ -657,6 +657,11 @@ class Canvas(QtWidgets.QWidget):
         self.storeShapes()
         self.update()
 
+    def deleteAllShapes(self):
+        if self.shapes:
+            self.selectShapes(self.shapes)
+        return self.deleteSelected()
+
     def duplicateSelectedShapes(self):
         if self.selectedShapes:
             self.selectedShapesCopy = [s.copy() for s in self.selectedShapes]
