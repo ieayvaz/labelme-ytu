@@ -7,6 +7,7 @@ import os
 import os.path as osp
 import re
 import webbrowser
+import time
 
 import cv2
 import imgviz
@@ -151,6 +152,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fileSearch.textChanged.connect(self.fileSearchChanged)
         self.fileListWidget = QtWidgets.QListWidget()
         self.fileListWidget.itemSelectionChanged.connect(self.fileSelectionChanged)
+        self.fileListWidget.model().rowsInserted.connect(lambda: self.fileListChanged())
+        self.fileListWidget.model().rowsRemoved.connect(lambda: self.fileListChanged())
         fileListLayout = QtWidgets.QVBoxLayout()
         fileListLayout.setContentsMargins(0, 0, 0, 0)
         fileListLayout.setSpacing(0)
@@ -423,7 +426,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.deleteAllShapes,
             shortcuts["delete_all"],
             "delete",
-            self.tr("Delete all polygons in image"),
+            self.tr("Delete all polygons in image (Shift+Delete)"),
             enabled=False
         )
         duplicate = action(
@@ -513,6 +516,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.selectObjModel,
             icon="ai",
             tip=self.tr("Select a model for object detection"),
+        )
+
+        fillGapVideo = action(
+            self.tr("&Fill Video Gaps"),
+            self.fillGapVideo,
+            tip=self.tr("Fill gaps in video between two non-empty frames(only for labels with same ID numbers)"),
+            enabled=False,
         )
 
         zoom = QtWidgets.QWidgetAction(self)
@@ -681,6 +691,7 @@ class MainWindow(QtWidgets.QMainWindow):
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
+            fillGapVideo=fillGapVideo,
             fileMenuActions=(open_, opendir, extractFrames, save, saveAs, close, quit),
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
@@ -696,6 +707,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 undoLastPoint,
                 None,
                 removePoint,
+                None,
+                fillGapVideo,
                 None,
                 toggle_keep_prev_mode,
             ),
@@ -733,6 +746,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 brightnessContrast,
             ),
             onShapesPresent=(saveAs, hideAll, showAll, toggleAll, deleteAll),
+            onVideoOpened=(fillGapVideo,),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -848,6 +862,10 @@ class MainWindow(QtWidgets.QMainWindow):
         runYolo.setDefaultWidget(QtWidgets.QWidget())
         runYolo.defaultWidget().setLayout(QtWidgets.QVBoxLayout())
         #
+        _warningLabel = QtWidgets.QLabel(self.tr("Warning: These methods will overwrite the existing labels!"))
+        _warningLabel.setAlignment(QtCore.Qt.AlignCenter)
+        runYolo.defaultWidget().layout().addWidget(_warningLabel)
+
         modelName = "No Model"
         if(self.model_path):
            modelName = Yolo.getFileName(self.model_path) 
@@ -995,9 +1013,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     pred_shapes[-1].addPoint(qpoint_list[1])
                     i += 1
 
-                self.loadShapes(pred_shapes,replace=False)
+                self.loadShapes(pred_shapes,replace=True)
 
     def runYoloVid(self):
+        # the real code is above
         if not (self.model_path and self.model_path.split(".")[-1] == "pt"):
             self.errorDialogue.setText(self.tr("Model cannot found!"))
             self.errorDialogue.show()
@@ -1017,10 +1036,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if progress.wasCanceled():
                 break
 
-            self.runYoloJson(self.fileListWidget.item(i).text())
+            self.loadFile(self.fileListWidget.item(i).text())
+            self.runYolo()
+            self.saveFileAuto()
+            time.sleep(2)
 
         progress.setValue(self.fileListWidget.count())
-        self.loadFile(self.filename)
 
     def runYoloJson(self,path):
 
@@ -1202,6 +1223,59 @@ class MainWindow(QtWidgets.QMainWindow):
    
         webbrowser.open(url)
 
+    def fillGapVideo(self):
+        if len(self.labelList) == 0:
+            self.errorDialogue.setText(self.tr("No annotation found in current image!"))
+            self.errorDialogue.show()
+            return
+        if self.fileListWidget.currentRow() - 1 < 0:
+            self.errorDialogue.setText(self.tr("No previous frame found!"))
+            self.errorDialogue.show()
+            return
+        
+        all_shapes = []
+        images = []
+        is_last = False
+        start_file = self.fileListWidget.currentItem().text()
+
+        all_shapes.append(self.canvas.shapes)
+        im = self.fileListWidget.item(self.fileListWidget.currentRow() - 1)
+        while im is not None:
+            self.loadFile(im.text())
+            if len(self.labelList) > 0:
+                all_shapes.append(self.canvas.shapes)
+                is_last = True
+                break
+            images.append(im)
+            im = self.fileListWidget.item(self.fileListWidget.currentRow() - 1)
+
+        if not is_last:
+            self.errorDialogue.setText(self.tr("No previous annotated frame found!"))
+            self.errorDialogue.show()
+            return
+        
+        for i in reversed(range(len(images))):
+            self.loadFile(images[i].text())
+            new_shapes = []
+            for shape1 in all_shapes[0]:
+                for shape2 in all_shapes[1]:
+                    if shape1.group_id == shape2.group_id:
+                        new_shape = shape1.copy()
+                        
+                        x_p0 = shape1.points[0].x() - (shape1.points[0].x() - shape2.points[0].x())*(i + 1)/(len(images) + 1)
+                        y_p0 = shape1.points[0].y() - (shape1.points[0].y() - shape2.points[0].y())*(i + 1)/(len(images) + 1)
+                        x_p1 = shape1.points[1].x() - (shape1.points[1].x() - shape2.points[1].x())*(i + 1)/(len(images) + 1)
+                        y_p1 = shape1.points[1].y() - (shape1.points[1].y() - shape2.points[1].y())*(i + 1)/(len(images) + 1)
+                        first_point = QtCore.QPointF(x_p0, y_p0)
+                        second_point = QtCore.QPointF(x_p1, y_p1)
+                        print(first_point, second_point)
+
+                        new_shape.points = [first_point, second_point]
+                        new_shapes.append(new_shape)
+            self.loadShapes(new_shapes, replace=True)
+            self.saveFileAuto()
+            self.loadFile(start_file)
+
     def selectObjModel(self):
         model_path = QtWidgets.QFileDialog.getOpenFileName(self,
                                                            self.tr("Open File"),
@@ -1350,6 +1424,14 @@ class MainWindow(QtWidgets.QMainWindow):
             filename = self.imageList[currIndex]
             if filename:
                 self.loadFile(filename)
+
+    def fileListChanged(self):
+        if self.fileListWidget.count() == 0:
+            for action in self.actions.onVideoOpened:
+                action.setEnabled(False)
+        else:
+            for action in self.actions.onVideoOpened:
+                action.setEnabled(True)
 
     # React to canvas signals.
     def shapeSelectionChanged(self, selected_shapes):
@@ -2026,6 +2108,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def saveFile(self, _value=False):
         assert not self.image.isNull(), "cannot save empty image"
+        print(self.labelFile)
         if self.labelFile:
             # DL20180323 - overwrite when in directory
             self._saveFile(self.labelFile.filename)
@@ -2034,6 +2117,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.close()
         else:
             self._saveFile(self.saveFileDialog())
+
+    def saveFileAuto(self, _value=False):
+        assert not self.image.isNull(), "cannot save empty image"
+        if self.labelFile:
+            self._saveFile(self.labelFile.filename)
+        elif self.output_file:
+            self._saveFile(self.output_file)
+            self.close()
+        else:
+            self._saveFile(self.filename.split(".")[0] + ".json")
 
     def saveFileAs(self, _value=False):
         assert not self.image.isNull(), "cannot save empty image"
@@ -2084,6 +2177,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.saveAs.setEnabled(False)
 
     def getLabelFile(self):
+        if self.filename is None:
+            return None
         if self.filename.lower().endswith(".json"):
             label_file = self.filename
         else:
@@ -2269,7 +2364,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             frame_num += 1
 
-        progress.setValue(total_frames/frame_interval)
+        progress.setValue(int(total_frames/frame_interval))
         cap.release()
         msgbox = QtWidgets.QMessageBox()
         msgbox.setText("Frames saved succesfully to %s" % dirpath)
